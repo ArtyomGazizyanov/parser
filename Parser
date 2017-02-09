@@ -1,0 +1,177 @@
+<?php
+    $start = microtime(true);
+    $robber = new rob;
+
+    ####### настройка скрипта ######
+
+    $partnerHash = "okyqq2fyn5agjru323trmfd6wyx2vsyd";
+    $grups = array ('-87389803','-87389803'); #Группы откуда будем пиздить записи
+    $randomm = mt_rand (0, count($grups)-1);
+    $grup = $grups[$randomm]; #Рандом групп
+
+    $robber->SetVar("token", "096deb6c7db61edc5feea651d5844f9749cfbd5d5c29b451e2847d0a5d8ee272140ad27dcf91005a2624f"); #токен можно получить тут http://vk.cc/5r10Wb
+    $robber->SetVar("id_group_rob", "$grup"); #не трогать
+    $robber->SetVar("id_group", "-139528661"); #ваша группа/обязательно перед id группы должен стоять минус
+    $robber->SetVar("max_post", "100"); #Из скольки последних записей парсить ( тут нечего не трогать )
+
+    ####### конец настройки #####
+
+
+    $robber->init();
+
+    function parse_links($str)
+
+    {
+        define('REG_URL', "/(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/");
+        //$text = "Трусы - http://ali.pub/hykn5";
+        if(preg_match(REG_URL, $str, $url))
+        {
+            //preg_replace($reg_exUrl, "Это ссылка", $text)
+
+            $longLink =  OpenLink($url[0]);
+            $shortUrl = GetShortUrl("http://alipromo.com/redirect/cpa/o/" . "okyqq2fyn5agjru323trmfd6wyx2vsyd"   . "?to=" . $longLink);
+            echo $url[0] . PHP_EOL;
+            echo $shortUrl . PHP_EOL;
+            preg_replace($longLink, $shortUrl, $str);
+        }
+        return $url[0];
+    }
+
+function GetShortUrl($aliUrl)
+{
+    define('REG_URL', "/(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/");
+    define('URL', "http://save.ali.pub/get-url.php");
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, URL);
+    curl_setopt($curl, CURLOPT_HEADER, 1);
+    curl_setopt($curl, CURLOPT_POST, 1);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_POSTFIELDS,
+        array (
+            'url'=> $aliUrl,
+            'search-button'=> 'OK'
+        ));
+    //echo $url;
+    curl_setopt($curl, CURLOPT_USERAGENT, 'MSIE 5');
+    curl_setopt ($curl, CURLOPT_REFERER, "http://ya.ru");
+    $res = curl_exec($curl);
+    if($res)
+    {
+
+        if (preg_match(REG_URL, $res, $found))
+        {
+            return "http://ali.pub/".substr($found[0], strlen($found[0]) - 5, strlen($found[0]));
+        }
+    }
+    curl_close($curl);
+
+}
+echo GetShortUrl("http://alipromo.com/redirect/cpa/o/" . $partnerHash . "..");
+
+
+function OpenLink($link)
+{
+    //$link - кооткая ссылка
+    //$link = "http://alipromo.com/redirect/cpa/o/ol0ybvewsc7ble8r9rhrsot27bl5bt3q/";
+    //$link = "http://s.click.aliexpress.com/deep_link.htm?aff_short_key=eub6yrrBy&af=13862&cv=7343386&cn=2ol3q26tn404xc9wcpqkjw0bppml6980&dp=v5_2ol3q26tn404xc9wcpqkjw0bppml6980&dl_target_url=https%3A%2F%2Fru.aliexpress.com%2Fitem%2FStacked-Grain-Storage-Tank-with-Cover-Plastic-Kitchen-Receive-Sealed-Cans-of-Food-Preservation-Box-Bottles%2F32761139307.html&afref=";
+    //в результате https://ru.aliexpress.com/item/Stacked-Grain-Storage-Tank-with-Cover-Plastic-Kitchen-Receive-Sealed-Cans-of-Food-Preservation-Box-Bottles/32761139307.html?aff_platform=aaf&cpt=1486634181350&sk=eub6yrrBy&aff_trace_key=bfe6caae85a04994a0bce687d435ab79-1486634181350-07127-eub6yrrBy
+
+    for($linksDeep = 0 ; $linksDeep < 4; $linksDeep++)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $link);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        $a = curl_exec($ch);
+        curl_close($ch);
+
+        $headers = explode("\n", $a);
+
+        $redir = $link;
+
+        $j = count($headers);
+        for ($i = 0; $i < $j; $i++)
+        {
+            if (strpos($headers[$i], "Location:") !== false)
+            {
+                $redir = trim(str_replace("Location:", "", $headers[$i]));
+                break;
+            }
+        }
+        $link = $redir;
+
+     //   echo "temp: " . $link . PHP_EOL;
+    }
+    //echo "URL: " . $link . PHP_EOL;
+    return $link;
+}
+
+function FindLinks($text)
+{
+    $array = explode(PHP_EOL, $text);
+    for($i = 0 ; $i < count($array); $i++)
+    {
+        $urlLink = parse_links($array[$i]);
+    }
+}
+
+//     регулярка для поиска ссылок /(([a-z0-9\-\.]+)?[a-z0-9\-]+(!?\.[a-z]{2,4}))/
+/*построчно проверять и искать рекгуляркой ссылки
+    нашли- запускаем ссылку в iframe
+    дождались пока странича загрузиться и копируем ссылку
+    отправляем ссылку в API от epn*/
+    class rob
+    {
+        function init()
+        {
+            $query = $this->curl("https://api.vk.com/method/wall.get?owner_id=".$this->id_group_rob."&count=100&v=5.42&access_token=".$this->token."");
+            $array_info = json_decode($query, true);
+            $count = rand(0,$this->max_post);
+            $textFind = $array_info[response][items][$count][text];//найденный текст
+            //echo "|".$textFind. "|"; //Найденное описание
+
+//            $array = explode(PHP_EOL, $textFind);
+//
+//            for($i = 0 ; $i < sizeof($array); $i++)
+//            {
+//                $urlLinks = parse_links($textFind);
+//                echo $urlLinks;
+//            }
+            FindLinks($textFind);
+
+
+            if(isset($array_info[response][items][$count][attachments]))
+            {
+                foreach ($array_info[response][items][$count][attachments] as $key => &$value)
+                {
+                    $type = $array_info[response][items][$count][attachments][$key][type];
+                    $attachments .= $type.$array_info[response][items][$count][attachments][$key][$type][owner_id]."_".$array_info[response][items][$count][attachments][$key][$type][id].",";
+                }
+                $attachments = substr($attachments, 0, -1);
+                $query = $this->curl("https://api.vk.com/method/wall.post?owner_id=".$this->id_group."&from_group=1&message=".urlencode($array_info[response][items][$count][text])."&attachments=".$attachments."&v=5.42&access_token=".$this->token."");
+                $array_info = json_decode($query, true);
+            }
+            else
+            {
+                $query = $this->curl("https://api.vk.com/method/wall.post?owner_id=".$this->id_group."&from_group=1&message=".urlencode($array_info[response][items][$count][text])."&v=5.42&access_token=".$this->token."");
+            }
+        }
+        function SetVar($name_var, $value_var)
+        {
+            return $this->$name_var = $value_var;
+        }
+        function curl($url)
+        {
+            $ch = curl_init($url);
+            curl_setopt ($ch,CURLOPT_RETURNTRANSFER,true);
+            curl_setopt ($ch,CURLOPT_SSL_VERIFYHOST,false);
+            curl_setopt ($ch,CURLOPT_SSL_VERIFYPEER,false);
+            $response = curl_exec($ch);
+            curl_close ($ch);
+            return $response;
+        }
+    }
+    //echo "<br><br>Время выполнения: ".(microtime(true)-$start)." секунд.";
+    $json_array = json_encode($urlLinks);
+//    echo eval($json_array);
